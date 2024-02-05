@@ -34,7 +34,7 @@ def thank_the_user():
 
 
 @app.route('/questions/<int:num>')
-def show_user_the_right_question(num):
+def show_user_the_question(num):
     """Show the user the right answer"""
     answers_in_responses = len(responses)
     if num <= answers_in_responses and len(surveys.satisfaction_survey.questions) != answers_in_responses:
@@ -49,7 +49,11 @@ def show_user_the_right_question(num):
         return redirect("/thank-you")
     else:
         flash(f"You're trying to access an invalid question {num}")
-        return render_template(
+        return redirect(f"/question/{len(responses)}")
+@app.route('/question/<int:num>')
+def show_user_the_right_question(num):
+   answers_in_responses = len(responses)
+   return render_template(
             'question.html',
             question_num=answers_in_responses,
             question=surveys.satisfaction_survey.questions[answers_in_responses].question,
