@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, redirect, flash
+from flask import session
 from flask_debugtoolbar import DebugToolbarExtension
 import surveys
 
@@ -8,20 +9,36 @@ app.config['SECRET_KEY'] = "chicken123"
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS']=False
 debug = DebugToolbarExtension(app)
 
-responses = []
+res_in_cookies = 'responses'
 
 @app.route('/')
 def show_homepage():
   """Showing the homepage"""
-  question_number = 0
-  return render_template('homepage.html', survey_title = surveys.satisfaction_survey.title, survey_instructions = surveys.satisfaction_survey.instructions, question_number=question_number)
+  return render_template('homepage.html', survey_title = surveys.satisfaction_survey.title, survey_instructions = surveys.satisfaction_survey.instructions)
+
+@app.route("/begin", methods=["POST"])
+def start_survey():
+    """Clear the session of responses."""
+
+    session[res_in_cookies] = []
+    print("*********restart**********")
+    print(session[res_in_cookies])
+    print("*********restart**********")
+
+    return redirect("/questions/0")
 
 @app.route('/answer',methods=["POST"])
 def append_ans_to_res():
   """Saving the answers to the database"""
   choice = request.form['answer']
+
+  responses = session[res_in_cookies]
   responses.append(choice)
-  print(responses)
+  session[res_in_cookies]= responses
+  print("*********res_in_cookies updated**********")
+  print(session[res_in_cookies])
+  print("*********res_in_cookies updated**********")
+
   if len(responses)== len(surveys.satisfaction_survey.questions):
     return redirect('/thank-you')
   else:
@@ -36,6 +53,7 @@ def thank_the_user():
 @app.route('/questions/<int:num>')
 def show_user_the_question(num):
     """Show the user the right answer"""
+    responses = session.get(res_in_cookies)
     answers_in_responses = len(responses)
     if num <= answers_in_responses and len(surveys.satisfaction_survey.questions) != answers_in_responses:
         return render_template(
